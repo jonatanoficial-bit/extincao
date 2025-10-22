@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A Extinção – Jogo Interativo</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #f0f0f0;
+            background-color: #000000;
+            background-image: repeating-linear-gradient(
+                45deg,
+                #333333 0 10px,
+                #000000 10px 20px
+            );
+        }
+        .hazard {
+            background: repeating-linear-gradient(
+                45deg,
+                #ffcc00 0 20px,
+                #000000 20px 40px
+            );
+            height: 10px;
+        }
+        #game {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #image-container img {
+            width: 100%;
+            height: auto;
+            border: 2px solid #ffcc00;
+        }
+        #text {
+            font-size: 1.2em;
+            margin-top: 15px;
+            line-height: 1.4;
+            min-height: 120px;
+        }
+        .choices {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .choices button {
+            padding: 12px;
+            font-size: 1em;
+            background-color: #222222;
+            border: 1px solid #ffcc00;
+            color: #ffcc00;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .choices button:hover {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+        #health-bar {
+            width: 100%;
+            background-color: #333333;
+            height: 20px;
+            border: 1px solid #555555;
+            margin-top: 10px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #health-inner {
+            height: 100%;
+            width: 100%;
+            background-color: #00aa00;
+        }
+        @media (max-width: 600px) {
+            #text { font-size: 1em; }
+            .choices button { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hazard"></div>
+    <div id="game">
+        <div id="image-container"><img src="images/scene00.jpg" alt="Cena inicial"></div>
+        <div id="health-bar"><div id="health-inner"></div></div>
+        <div id="text"></div>
+        <div class="choices" id="choices"></div>
+    </div>
+    <script>
+        const story = {"start": {"text": "Escolha seu personagem para iniciar a aventura.\n\nDaniel — um policial experiente.\nCamila — uma cirurgiã renomada.\nLucas — o filho de 8 anos com um segredo misterioso.", "image": "scene00.jpg", "choices": [{"label": "Jogar como Daniel", "next": "s1", "health": 0, "character": "Daniel"}, {"label": "Jogar como Camila", "next": "s1", "health": 0, "character": "Camila"}, {"label": "Jogar como Lucas", "next": "s1", "health": 0, "character": "Lucas"}]}, "s1": {"text": "Florença, março de 2025. O amanhecer é sereno, mas um ar de apreensão permeia o ambiente. {character} observa turistas com máscaras e sente que algo não está certo.", "image": "scene01.jpg", "choices": [{"label": "Explorar a praça principal", "next": "s2", "health": -5}, {"label": "Tomar um café e ouvir as notícias", "next": "s3", "health": 0}, {"label": "Percorrer uma rua lateral", "next": "s4", "health": -5}, {"label": "Voltar para o hotel e descansar", "next": "s5", "health": 5}]}, "s2": {"text": "Na praça, você nota um grupo de turistas asiáticos usando máscaras descartáveis. Um deles está suando e tremendo. Dois homens murmuram algo sobre uma doença. Você sente o perigo.", "image": "scene02.jpg", "choices": [{"label": "Oferecer ajuda médica", "next": "s6", "health": -15}, {"label": "Avisar discretamente as autoridades", "next": "s7", "health": -5}, {"label": "Ignorar e se afastar rapidamente", "next": "s8", "health": 0}, {"label": "Gravar com o celular para registrar", "next": "s9", "health": -5}]}, "s3": {"text": "Enquanto toma o café, a televisão mostra boletins sobre uma doença mortal surgindo no continente. As pessoas sussurram com medo. Você precisa decidir o que fazer a seguir.", "image": "scene03.jpg", "choices": [{"label": "Correr para a praça para procurar a família", "next": "s2", "health": -10}, {"label": "Ligar para a embaixada e pedir instruções", "next": "s7", "health": -5}, {"label": "Voltar para o hotel imediatamente", "next": "s5", "health": -5}, {"label": "Ficar e esperar mais notícias", "next": "s8", "health": -10}]}, "s4": {"text": "Numa rua lateral, você encontra uma loja com uma televisão ligada. O noticiário fala de aeroportos fechados e quarentenas. Um senhor sussurra que ninguém sairá da Europa.\nVocê precisa escolher rapidamente.", "image": "scene04.jpg", "choices": [{"label": "Voltar e reunir a família", "next": "s2", "health": -5}, {"label": "Ligar para casa no Brasil", "next": "s7", "health": -5}, {"label": "Ignorar e continuar andando", "next": "s8", "health": -10}, {"label": "Buscar um táxi para o aeroporto", "next": "s10", "health": -10}]}, "s5": {"text": "No hotel, sirenes começam a tocar. Anúncios em várias línguas ordenam a evacuação. Soldados estrangeiros entram apressados. A confusão se instala.", "image": "scene05.jpg", "choices": [{"label": "Seguir as ordens e descer ao lobby", "next": "s7", "health": 0}, {"label": "Pegar pertences e se esconder no quarto", "next": "s8", "health": -10}, {"label": "Sair pelas escadas de emergência", "next": "s10", "health": -5}, {"label": "Tentar contactar a família pelo celular", "next": "s7", "health": -5}]}, "s6": {"text": "Você se aproxima do homem que tosse. Ao ver seu crachá de médico, ele recua, mas um dos companheiros impede sua ajuda. Você sente que foi observado. Pouco depois, gritos irrompem e pessoas começam a correr.", "image": "scene06.jpg", "choices": [{"label": "Permanecer para ajudar outros doentes", "next": "s11", "health": -20}, {"label": "Fugir da praça imediatamente", "next": "s8", "health": -10}, {"label": "Procurar a família em meio ao caos", "next": "s12", "health": -15}, {"label": "Avisar um policial local", "next": "s7", "health": -10}]}, "s7": {"text": "Você entra em contato com a embaixada/autoridades. Eles informam que um ônibus blindado irá evacuar cidadãos brasileiros para um campo de contenção. Você deve decidir o próximo passo.", "image": "scene07.jpg", "choices": [{"label": "Seguir as instruções e embarcar", "next": "s13", "health": -5}, {"label": "Decidir ficar por conta própria", "next": "s8", "health": -10}, {"label": "Ir ao ponto de encontro sem avisar a família", "next": "s13", "health": -15}, {"label": "Dizer que não vai e procurar outra saída", "next": "s10", "health": -15}]}, "s8": {"text": "Ao ignorar os alertas, você caminha por ruas vazias. Sons de sirenes e tiros ecoam ao longe. A tensão aumenta. Uma sombra o segue.\nSeu corpo sente o peso do perigo.", "image": "scene08.jpg", "choices": [{"label": "Esconder-se em uma loja", "next": "s11", "health": -10}, {"label": "Correr em direção à embaixada", "next": "s7", "health": -15}, {"label": "Gritar por ajuda", "next": "s12", "health": -10}, {"label": "Enfrentar a sombra", "next": "s14", "health": -20}]}, "s9": {"text": "Enquanto grava o caos, você chama a atenção de guardas que lhe ordenam parar. Outros curiosos observam. A multidão começa a gritar que você está espalhando pânico.", "image": "scene09.jpg", "choices": [{"label": "Apagar o vídeo e seguir com os guardas", "next": "s13", "health": -5}, {"label": "Salvar o vídeo e fugir", "next": "s8", "health": -20}, {"label": "Compartilhar o vídeo nas redes", "next": "s10", "health": -15}, {"label": "Confrontar os guardas", "next": "s14", "health": -25}]}, "s10": {"text": "Você tenta chegar ao aeroporto, mas encontra barreiras e soldados. Eles informam que todas as rotas estão fechadas e o conduzem ao mesmo campo de contenção onde outros civis estão sendo levados.", "image": "scene10.jpg", "choices": [{"label": "Cooperar e seguir para o campo", "next": "s13", "health": -5}, {"label": "Resistir e tentar fugir pelos arredores", "next": "s8", "health": -20}, {"label": "Subornar um soldado", "next": "s14", "health": -25}, {"label": "Aguardar e observar a movimentação", "next": "s13", "health": -10}]}, "s11": {"text": "Você se refugia em uma loja com outros civis. Alguns estão feridos. O ar fica pesado, e tosses ecoam. Uma mulher pede sua ajuda. Você sente que ficar ali pode ser perigoso.", "image": "scene11.jpg", "choices": [{"label": "Ajudar os feridos", "next": "s12", "health": -15}, {"label": "Fugir antes que seja tarde", "next": "s8", "health": -10}, {"label": "Tentar sair pelos fundos", "next": "s14", "health": -15}, {"label": "Esperar para ver o que acontece", "next": "s13", "health": -20}]}, "s12": {"text": "No meio do tumulto você tenta encontrar sua família. Gritos, tiros e pessoas infectadas tornam tudo confuso. Uma mão segura seu braço – é alguém conhecido ou um desconhecido ameaçador?", "image": "scene12.jpg", "choices": [{"label": "Seguir quem o puxa", "next": "s13", "health": -10}, {"label": "Soltar-se e continuar procurando", "next": "s8", "health": -15}, {"label": "Se esconder até acalmar", "next": "s11", "health": -10}, {"label": "Gritar por socorro", "next": "s14", "health": -20}]}, "s13": {"text": "Você chega a um campo de contenção cercado por arame farpado e metralhadoras. Médicos com EPIs examinam todos. Um oficial lê seu histórico e vê suas habilidades. Você é classificado e recebe um crachá vermelho.", "image": "scene13.jpg", "choices": [{"label": "Cooperar e entrar na barraca designada", "next": "s15", "health": -5}, {"label": "Questionar as ordens", "next": "s14", "health": -10}, {"label": "Observar outros prisioneiros discretamente", "next": "s16", "health": -5}, {"label": "Planejar uma fuga imediatamente", "next": "s18", "health": -15}]}, "s14": {"text": "Sua ousadia chama atenção de soldados e pessoas hostis. Uma confrontação inicia. Alguém se aproxima com violência. Você precisa agir rápido para sobreviver.", "image": "scene14.jpg", "choices": [{"label": "Lutar usando suas habilidades", "next": "s17", "health": -20}, {"label": "Tentar fugir em meio à briga", "next": "s18", "health": -15}, {"label": "Apaziguar e negociar", "next": "s15", "health": -10}, {"label": "Gritar para chamar soldados", "next": "s15", "health": -15}]}, "s15": {"text": "Na barraca escura e abafada você conhece outras pessoas. Um jornalista chamado Riccardo cochicha sobre uma saída secreta pelas galerias de esgoto. Ele promete levar três pessoas em troca de uma arma. Você confia?", "image": "scene15.jpg", "choices": [{"label": "Confiar e prometer ajudá-lo", "next": "s19", "health": -5}, {"label": "Recusar e seguir as regras do campo", "next": "s16", "health": -5}, {"label": "Denunciar Riccardo aos guardas", "next": "s20", "health": -10}, {"label": "Pensar melhor antes de decidir", "next": "s16", "health": -5}]}, "s16": {"text": "Você observa o comportamento de soldados e de outros internos. Percebe caminhões saindo vazios e ouvi rumores sobre 'limpar setores'. Seu instinto diz para agir.", "image": "scene16.jpg", "choices": [{"label": "Procurar armas escondidas", "next": "s17", "health": -15}, {"label": "Buscar aliados entre os prisioneiros", "next": "s15", "health": -10}, {"label": "Ficar e tentar descansar", "next": "s20", "health": 5}, {"label": "Explorar o perímetro discretamente", "next": "s18", "health": -15}]}, "s17": {"text": "Você consegue uma arma ou ferramenta improvisada. A tensão no campo aumenta. Guardas começam a separar pessoas com crachás vermelhos. Está claro que algo ruim vai acontecer.", "image": "scene17.jpg", "choices": [{"label": "Usar a arma para libertar outros", "next": "s18", "health": -20}, {"label": "Esconder a arma e esperar Riccardo", "next": "s19", "health": -5}, {"label": "Atacar um guarda e fugir sozinho", "next": "s22", "health": -25}, {"label": "Entregar a arma a Riccardo", "next": "s19", "health": -5}]}, "s18": {"text": "À noite, você, sua família e Riccardo preparam a fuga. Um crachá vermelho é o passaporte para a morte. Pelas galerias de esgoto úmidas e fétidas vocês rastejam. Passos e latidos se aproximam.", "image": "scene18.jpg", "choices": [{"label": "Virar à esquerda nas galerias", "next": "s21", "health": -20}, {"label": "Virar à direita seguindo Riccardo", "next": "s22", "health": -15}, {"label": "Voltar para o campo por medo", "next": "s20", "health": -20}, {"label": "Esconder-se e esperar os cães passarem", "next": "s23", "health": -15}]}, "s21": {"text": "Você escolhe um túnel lateral escuro. Um grupo desconhecido aguarda e tenta roubar seus pertences. A briga é inevitável.", "image": "scene21.jpg", "choices": [{"label": "Lutar e continuar", "next": "s24", "health": -25}, {"label": "Entregar o que pedem e sobreviver", "next": "s23", "health": -10}, {"label": "Fugir de volta para Riccardo", "next": "s22", "health": -15}, {"label": "Tentar convencer o grupo a se unir", "next": "s24", "health": -10}]}, "s22": {"text": "Seguindo Riccardo pelo caminho certo, você chega à saída de um vinhedo abandonado. Drones sobrevoam a área e holofotes varrem o campo. Qualquer movimento pode ser fatal.", "image": "scene22.jpg", "choices": [{"label": "Correr em zigue-zague para evitar drones", "next": "s24", "health": -20}, {"label": "Esperar até os drones se afastarem", "next": "s23", "health": -10}, {"label": "Usar uma lanterna para distrair", "next": "s24", "health": -15}, {"label": "Voltar para o túnel e procurar outro caminho", "next": "s21", "health": -15}]}, "s23": {"text": "Você decide se esconder e recuperar o fôlego. A respiração dificultosa e a adrenalina cobram seu preço, mas alguns minutos de repouso o revigoram. Você ouve vozes mais à frente.", "image": "scene23.jpg", "choices": [{"label": "Seguir o som das vozes", "next": "s24", "health": 5}, {"label": "Voltar para a galeria principal", "next": "s22", "health": -10}, {"label": "Dormir algumas horas", "next": "s30", "health": -30}, {"label": "Pedir ajuda em voz baixa", "next": "s21", "health": -10}]}, "s24": {"text": "Vocês alcançam uma antiga estação de pesquisa. Dentro há mesas enferrujadas, frascos vazios e uma porta de chumbo com a inscrição 'Centro de Estudo Viral'. Parece um refúgio temporário.", "image": "scene24.jpg", "choices": [{"label": "Barricar a entrada e descansar", "next": "s25", "health": 10}, {"label": "Explorar o laboratório imediatamente", "next": "s25", "health": -10}, {"label": "Continuar fugindo sem parar", "next": "s29", "health": -20}, {"label": "Procurar recursos úteis", "next": "s25", "health": -5}]}, "s25": {"text": "No laboratório, {character} monta um posto improvisado. Exames revelam que o sangue de Lucas (ou de você, se for Lucas) contém um marcador genético capaz de bloquear o vírus. Essa descoberta pode salvar o mundo ou condená-lo se cair em mãos erradas.", "image": "scene25.jpg", "choices": [{"label": "Guardar o segredo e fugir", "next": "s27", "health": -10}, {"label": "Enviar um sinal para cientistas confiáveis", "next": "s26", "health": -5}, {"label": "Gravar um vídeo e divulgar ao mundo", "next": "s28", "health": -15}, {"label": "Confiar em Riccardo e planejar juntos", "next": "s27", "health": -5}]}, "s26": {"text": "Você estabelece contato com uma cientista em uma base subterrânea na Suíça. Ela promete extrair o antídoto e proteger sua família. Mas chegar até lá é perigoso.", "image": "scene26.jpg", "choices": [{"label": "Partir imediatamente para a Suíça", "next": "s31", "health": -20}, {"label": "Pedir a ela que venha buscá-lo", "next": "s33", "health": -10}, {"label": "Desistir e manter o segredo", "next": "s27", "health": -10}, {"label": "Vender a informação para mercenários", "next": "s34", "health": -30}]}, "s27": {"text": "Você decide que é melhor manter o segredo e fugir. Outros grupos não podem saber da imunidade. A jornada continua, mas o peso do mundo está nos seus ombros.", "image": "scene27.jpg", "choices": [{"label": "Fugir para uma zona rural isolada", "next": "s32", "health": -15}, {"label": "Dirigir para a fronteira e tentar cruzar", "next": "s31", "health": -20}, {"label": "Esconder-se em uma igreja abandonada", "next": "s33", "health": -10}, {"label": "Procurar rebeldes para proteção", "next": "s34", "health": -20}]}, "s28": {"text": "Ao divulgar ao mundo que existe um imune, você atrai a atenção de governos, rebeldes e criminosos. Seu grupo se torna alvo. Em pouco tempo, drones e soldados cercam o laboratório.", "image": "scene28.jpg", "choices": [{"label": "Render-se aos militares", "next": "ending_captured", "health": -30}, {"label": "Lutar até a última bala", "next": "ending_sacrifice", "health": -40}, {"label": "Escapar pelos túneis novamente", "next": "s27", "health": -20}, {"label": "Negociar com uma facção rebelde", "next": "s34", "health": -25}]}, "s31": {"text": "A viagem para a Suíça é longa e cheia de perigos. Na fronteira, tiroteios e soldados desconfiados. Você precisa cruzar montanhas, rios e postos de controle. O frio e o desgaste pesam.", "image": "scene31.jpg", "choices": [{"label": "Tentar atravessar clandestinamente", "next": "ending_death", "health": -40}, {"label": "Subornar os guardas", "next": "ending_captured", "health": -30}, {"label": "Esperar ajuda da cientista", "next": "ending_good", "health": -20}, {"label": "Desistir e voltar para o refúgio", "next": "s27", "health": -10}]}, "s32": {"text": "Em uma zona rural isolada, você encontra uma pequena vila desconhecida. Moradores receosos acolhem sua família. A doença ainda espalha-se pelo mundo. Vocês sobrevivem, mas o futuro é incerto.", "image": "scene32.jpg", "choices": [{"label": "Ficar e construir uma nova vida", "next": "ending_escape", "health": 10}, {"label": "Retornar à estrada em busca de ajuda", "next": "s27", "health": -10}, {"label": "Mandar um bilhete para a ciência", "next": "s26", "health": -10}, {"label": "Explorar a região por recursos", "next": "s33", "health": -10}]}, "s33": {"text": "Você decide pedir que a cientista venha até seu esconderijo. Isso leva dias e chama atenção de grupos rivais. Rebeldes, religiosos fanáticos e mercenários se aproximam. O conflito é iminente.", "image": "scene33.jpg", "choices": [{"label": "Aliar-se aos rebeldes e lutar", "next": "ending_rebel", "health": -30}, {"label": "Aceitar proteção militar", "next": "ending_captured", "health": -25}, {"label": "Tentar diplomacia entre grupos", "next": "ending_good", "health": -20}, {"label": "Fugir antes que eles cheguem", "next": "s27", "health": -20}]}, "s34": {"text": "Você entrega a informação da imunidade a um grupo de mercenários em troca de proteção e poder. Eles veem a chance de dominar os restos do mundo com a cura nas mãos. Você perde sua humanidade.", "image": "scene34.jpg", "choices": [{"label": "Abraçar o poder e tornar-se senhor da guerra", "next": "ending_warlord", "health": -50}, {"label": "Trair os mercenários e fugir", "next": "s27", "health": -30}, {"label": "Arrepender-se e procurar a cientista", "next": "s26", "health": -20}, {"label": "Usar o recurso para chantagear governos", "next": "ending_betrayal", "health": -40}]}, "ending_good": {"text": "Final Bom: Graças à sua coragem e às decisões acertadas, a imunidade é transformada em vacina. Milhões são salvos. Sua família torna-se símbolo de esperança e o mundo inicia a reconstrução.", "image": "ending_good.jpg", "choices": []}, "ending_escape": {"text": "Final Neutro: Você encontrou um refúgio distante e sobreviveu com sua família. O destino do mundo é incerto, mas vocês têm paz por enquanto. Nem herói, nem vilão, apenas sobreviventes.", "image": "ending_escape.jpg", "choices": []}, "ending_sacrifice": {"text": "Final Sacrifício: Você lutou até a última bala para proteger sua família e permitir que outros escapassem. Seu sacrifício será lembrado como um ato de amor e coragem.", "image": "ending_sacrifice.jpg", "choices": []}, "ending_betrayal": {"text": "Final Traição: A informação caiu nas mãos erradas. Seu filho foi capturado e usado como arma. A humanidade sofre, e você vive com a culpa eterna da escolha errada.", "image": "ending_betrayal.jpg", "choices": []}, "ending_death": {"text": "Final Trágico: O risco foi grande demais. A doença ou as feridas consumiram sua vida antes que você pudesse alcançar um final feliz. O mundo continua a girar sem você.", "image": "ending_death.jpg", "choices": []}, "ending_rebel": {"text": "Final Rebelde: Você tornou-se líder de uma facção rebelde. Luta por liberdade, mas a luta dura para sempre. Sua família tornou-se secundária diante da guerra.", "image": "ending_rebel.jpg", "choices": []}, "ending_captured": {"text": "Final Capturado: As autoridades ou militares o prenderam. Sua família está sob custódia indefinida. O destino da imunidade e da humanidade agora é decidido por outros.", "image": "ending_captured.jpg", "choices": []}, "ending_warlord": {"text": "Final Tirano: Ao lado de mercenários, você usou a cura para dominar e explorar. O poder corrompeu completamente. Seu nome será lembrado como um tirano do novo mundo.", "image": "ending_warlord.jpg", "choices": []}};
+        let currentScene = 'start';
+        let character = null;
+        let health = 100;
+
+        function updateHealth(delta) {
+            health += delta;
+            if (health > 100) health = 100;
+            if (health < 0) health = 0;
+            const healthInner = document.getElementById('health-inner');
+            healthInner.style.width = health + '%';
+            if (health > 60) {
+                healthInner.style.backgroundColor = '#00aa00';
+            } else if (health > 30) {
+                healthInner.style.backgroundColor = '#ffaa00';
+            } else {
+                healthInner.style.backgroundColor = '#aa0000';
+            }
+        }
+
+        function startGame(selectedCharacter) {
+            character = selectedCharacter;
+            currentScene = 's1';
+            updateScene();
+        }
+
+        function chooseOption(optionIndex) {
+            const scene = story[currentScene];
+            const choice = scene.choices[optionIndex];
+            // Set character if selected on start
+            if (choice.character) {
+                character = choice.character;
+            }
+            updateHealth(choice.health);
+            // If health drops to zero, go to death ending
+            if (health <= 0) {
+                currentScene = 'ending_death';
+                renderEnding();
+                return;
+            }
+            currentScene = choice.next;
+            updateScene();
+        }
+
+        function renderEnding() {
+            const scene = story[currentScene];
+            document.getElementById('image-container').innerHTML =
+                `<img src="images/${scene.image}" alt="Final">`;
+            document.getElementById('text').innerText = scene.text.replace(/\{character\}/g, character || 'Seu personagem');
+            document.getElementById('choices').innerHTML = '';
+            // health bar stays at its last value
+        }
+
+        function updateScene() {
+            const scene = story[currentScene];
+            // If no choices, it's an ending
+            if (!scene.choices || scene.choices.length === 0) {
+                renderEnding();
+                return;
+            }
+            document.getElementById('image-container').innerHTML =
+                `<img src="images/${scene.image}" alt="Cena">`;
+            const text = scene.text.replace(/\{character\}/g, character || 'Seu personagem');
+            document.getElementById('text').innerText = text;
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            scene.choices.forEach((choice, idx) => {
+                const btn = document.createElement('button');
+                btn.innerText = choice.label;
+                btn.onclick = () => chooseOption(idx);
+                choicesDiv.appendChild(btn);
+            });
+        }
+
+        // Initialize game
+        updateHealth(0);
+        updateScene();
+    </script>
+</body>
+</html>
