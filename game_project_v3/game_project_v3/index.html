@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A Extinção – Jogo Interativo (Versão Completa)</title>
+    <style>
+        /* Estilo geral de fundo com listras amarelas e pretas para dar clima de perigo */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #f5f5f5;
+            background-color: #000;
+            background-image: repeating-linear-gradient(45deg, #222 0 10px, #000 10px 20px);
+        }
+        .hazard-header {
+            width: 100%;
+            height: 40px;
+            background: repeating-linear-gradient(45deg, #ffcc00 0 20px, #000 20px 40px);
+            position: relative;
+        }
+        .hazard-header::after {
+            /* Símbolo de biohazard centralizado */
+            content: "\2623";
+            font-size: 32px;
+            color: #ffcc00;
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: row;
+        }
+        /* Coluna principal com imagem, texto e escolhas */
+        #main-column {
+            flex: 1;
+            padding-right: 20px;
+        }
+        /* Barra de vida vertical ao lado */
+        #health-sidebar {
+            width: 20px;
+            background-color: #444;
+            border: 1px solid #ffcc00;
+            border-radius: 4px;
+            position: relative;
+        }
+        #health-sidebar-inner {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background-color: #00aa00;
+            height: 100%;
+        }
+        #scene-image {
+            width: 100%;
+            height: auto;
+            border: 2px solid #ffcc00;
+        }
+        #text {
+            margin-top: 10px;
+            font-size: 1.1em;
+            line-height: 1.4;
+            min-height: 100px;
+        }
+        #choices {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #choices button {
+            padding: 10px;
+            font-size: 1em;
+            background-color: #222;
+            border: 1px solid #ffcc00;
+            color: #ffcc00;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #choices button:hover {
+            background-color: #ffcc00;
+            color: #000;
+        }
+        #controls {
+            margin-top: 20px;
+        }
+        #controls button {
+            margin-right: 10px;
+            padding: 8px 12px;
+            font-size: 0.9em;
+            background-color: #444;
+            border: 1px solid #ffcc00;
+            color: #ffcc00;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #controls button:hover {
+            background-color: #ffcc00;
+            color: #000;
+        }
+        @media (max-width: 600px) {
+            #game-container {
+                flex-direction: column;
+            }
+            #main-column {
+                padding-right: 0;
+            }
+            #health-sidebar {
+                width: 100%;
+                height: 20px;
+                margin-top: 10px;
+            }
+            #health-sidebar-inner {
+                width: 0; /* Vai crescer horizontalmente no modo mobile */
+                height: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hazard-header"></div>
+    <div id="game-container">
+        <!-- Coluna principal com imagem, texto e escolhas -->
+        <div id="main-column">
+            <img id="scene-image" src="images/scene00.jpg" alt="Cena inicial" />
+            <div id="text"></div>
+            <div id="choices"></div>
+            <div id="controls">
+                <button onclick="saveGame()">💾 Salvar</button>
+                <button onclick="loadGame()">🔄 Continuar</button>
+                <button onclick="restartGame()">🔁 Reiniciar</button>
+            </div>
+        </div>
+        <!-- Barra de vida vertical -->
+        <div id="health-sidebar">
+            <div id="health-sidebar-inner"></div>
+        </div>
+    </div>
+
+    <script>
+        // ------------------------ GERADOR DE HISTÓRIAS ------------------------
+        /**
+         * Gera automaticamente um conjunto de cenas para um personagem.
+         * @param {string} prefix Prefixo do identificador (d para Daniel, m para Camila, l para Lucas)
+         * @param {string} charName Nome do personagem para inserir no texto
+         * @param {number} total Número de cenas a gerar
+         */
+        // Arrays de ações específicas para cada personagem para tornar as cenas mais coerentes
+        const actions = {
+            d: [
+                'investiga uma pista nas ruas desertas',
+                'defende um civil em perigo',
+                'negocia com militares desesperados',
+                'busca suprimentos escondidos',
+                'luta contra um infectado violento',
+                'protege sua família com coragem',
+                'explora vielas abandonadas',
+                'vigia os arredores em silêncio',
+                'confronta conspiradores mascarados',
+                'lidera um grupo de sobreviventes'
+            ],
+            m: [
+                'trata um ferido com seus conhecimentos',
+                'procura medicamentos escassos',
+                'analisa sintomas de um novo infectado',
+                'estuda o vírus em busca de cura',
+                'cuida de doentes em um abrigo',
+                'prepara um antídoto improvisado',
+                'diagnostica um paciente em pânico',
+                'realiza um procedimento de emergência',
+                'administra vacinas experimentais',
+                'salva uma vida com criatividade'
+            ],
+            l: [
+                'se esconde de soldados assustadores',
+                'procura seus pais em meio ao caos',
+                'observa pelas janelas quebradas',
+                'brinca com um cachorro perdido',
+                'se perde e encontra amigos',
+                'descobre um esconderijo secreto',
+                'escuta conversas assustadoras',
+                'cata objetos úteis no chão',
+                'planeja rotas de fuga com imaginação',
+                'corre corajosamente por um túnel escuro'
+            ]
+        };
+
+        function generateCharacterStory(prefix, charName, total) {
+            const story = {};
+            const actionList = actions[prefix];
+            // Rótulos textuais para as escolhas de cada personagem
+            const choiceLabels = {
+                d: [
+                    'Aproximar-se furtivamente',
+                    'Investigar a área',
+                    'Ajudar um civil',
+                    'Buscar suprimentos'
+                ],
+                m: [
+                    'Tratar um ferido',
+                    'Buscar medicamentos',
+                    'Estudar o vírus',
+                    'Procurar abrigo'
+                ],
+                l: [
+                    'Esconder-se',
+                    'Procurar os pais',
+                    'Explorar o ambiente',
+                    'Esperar quieto'
+                ]
+            };
+            for (let i = 1; i <= total; i++) {
+                const key = prefix + i;
+                const action = actionList[(i - 1) % actionList.length];
+                let text = `Cena ${i}: ${charName} ${action}. Cada escolha pode mudar seu destino.`;
+                let image = `${prefix}_scene${i}.jpg`;
+                const choices = [];
+                for (let j = 1; j <= 4; j++) {
+                    let nextIndex = i + j;
+                    let next;
+                    if (nextIndex > total) {
+                        const endingsArr = ['ending_good', 'ending_escape', 'ending_sacrifice', 'ending_betrayal', 'ending_death', 'ending_rebel', 'ending_captured', 'ending_warlord'];
+                        next = endingsArr[(i + j) % endingsArr.length];
+                    } else {
+                        next = prefix + nextIndex;
+                    }
+                    let healthDelta;
+                    if (prefix === 'd') healthDelta = [-20, -10, -5, 5][j - 1];
+                    else if (prefix === 'm') healthDelta = [-10, -5, 5, 10][j - 1];
+                    else healthDelta = [-5, -10, 5, -5][j - 1];
+                    // Usa o rótulo textual correspondente ao índice da escolha
+                    const label = choiceLabels[prefix][j - 1];
+                    choices.push({ label, next, health: healthDelta });
+                }
+                story[key] = { text, image, choices };
+            }
+            return story;
+        }
+        // Gera narrativas com 50 cenas para cada personagem
+        const stories = {
+            Daniel: generateCharacterStory('d', 'Daniel', 50),
+            Camila: generateCharacterStory('m', 'Camila', 50),
+            Lucas: generateCharacterStory('l', 'Lucas', 50)
+        };
+        
+        // Finais compartilhados
+        const endings = {
+            ending_good: { text: "Final Bom: A família consegue uma vacina e lidera uma reconstrução global. A história continua...", image: "ending_good.jpg", choices: [] },
+            ending_escape: { text: "Final Neutro: Vocês encontram refúgio, mas o mundo continua em ruínas. A história continua...", image: "ending_escape.jpg", choices: [] },
+            ending_sacrifice: { text: "Final Sacrifício: Um de vocês se sacrifica para salvar os outros. A história continua...", image: "ending_sacrifice.jpg", choices: [] },
+            ending_betrayal: { text: "Final Traição: A cura cai em mãos erradas e o mundo paga o preço. A história continua...", image: "ending_betrayal.jpg", choices: [] },
+            ending_death: { text: "Final Trágico: A doença ou o conflito vence. A história continua...", image: "ending_death.jpg", choices: [] },
+            ending_rebel: { text: "Final Rebelde: Você se torna líder de uma facção rebelde. A história continua...", image: "ending_rebel.jpg", choices: [] },
+            ending_captured: { text: "Final Capturado: Sua família é detida por militares. A história continua...", image: "ending_captured.jpg", choices: [] },
+            ending_warlord: { text: "Final Tirano: Você domina o mundo com a cura. A história continua...", image: "ending_warlord.jpg", choices: [] }
+        };
+
+        // Estado global
+        let currentStory = null; // objeto de cenas do personagem escolhido
+        let currentSceneKey = null;
+        let health = 100;
+        
+        function startGame(character) {
+            currentStory = stories[character];
+            currentSceneKey = Object.keys(currentStory)[0]; // primeiro número (d1, m1, l1)
+            health = 100;
+            updateScene();
+        }
+        
+        function updateHealth(delta) {
+            health += delta;
+            if (health > 100) health = 100;
+            if (health < 0) health = 0;
+            const bar = document.getElementById('health-sidebar-inner');
+            bar.style.height = health + '%';
+            // mudar cor conforme risco
+            if (health > 60) bar.style.backgroundColor = '#00aa00';
+            else if (health > 30) bar.style.backgroundColor = '#ffaa00';
+            else bar.style.backgroundColor = '#aa0000';
+        }
+        
+        function chooseOption(index) {
+            const scene = currentStory[currentSceneKey] || endings[currentSceneKey];
+            let choices = scene.choices;
+            const choice = choices[index];
+            updateHealth(choice.health);
+            currentSceneKey = choice.next;
+            // Se saúde esgotar, direciona a final morte
+            if (health <= 0) {
+                currentSceneKey = 'ending_death';
+            }
+            updateScene();
+        }
+        
+        function updateScene() {
+            // Se for final
+            let scene = currentStory ? currentStory[currentSceneKey] : null;
+            if (!scene) {
+                scene = endings[currentSceneKey];
+            }
+            document.getElementById('scene-image').src = 'images/' + scene.image;
+            document.getElementById('text').innerText = scene.text;
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            if (scene.choices && scene.choices.length > 0) {
+                scene.choices.forEach((ch, idx) => {
+                    const btn = document.createElement('button');
+                    btn.innerText = ch.label;
+                    btn.onclick = () => chooseOption(idx);
+                    choicesDiv.appendChild(btn);
+                });
+            }
+        }
+        
+        function saveGame() {
+            if (!currentStory) {
+                alert('Nenhum jogo iniciado para salvar.');
+                return;
+            }
+            const data = {
+                character: Object.keys(stories).find(key => stories[key] === currentStory),
+                sceneKey: currentSceneKey,
+                health
+            };
+            localStorage.setItem('extincao_v3', JSON.stringify(data));
+            alert('Jogo salvo!');
+        }
+        function loadGame() {
+            const raw = localStorage.getItem('extincao_v3');
+            if (!raw) {
+                alert('Nenhum jogo salvo encontrado.');
+                return;
+            }
+            const data = JSON.parse(raw);
+            currentStory = stories[data.character];
+            currentSceneKey = data.sceneKey;
+            health = data.health;
+            updateScene();
+            updateHealth(0);
+        }
+        function restartGame() {
+            currentStory = null;
+            currentSceneKey = null;
+            health = 100;
+            // Mostrar tela inicial
+            showStartScreen();
+        }
+        // Tela inicial
+        function showStartScreen() {
+            document.getElementById('scene-image').src = 'images/scene00.jpg';
+            // Texto introdutório para contextualizar a viagem na Itália
+            document.getElementById('text').innerText = '2025: Uma família brasileira viaja à Itália buscando descanso quando uma doença mortal se espalha. Escolha quem você será para decidir o destino de todos:';
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            ['Daniel','Camila','Lucas'].forEach(char => {
+                const btn = document.createElement('button');
+                btn.innerText = char;
+                btn.onclick = () => {
+                    startGame(char);
+                    updateHealth(0);
+                };
+                choicesDiv.appendChild(btn);
+            });
+        }
+        // Inicializa
+        showStartScreen();
+        updateHealth(0);
+    </script>
+</body>
+</html>
